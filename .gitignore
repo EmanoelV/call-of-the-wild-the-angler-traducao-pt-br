@@ -1,0 +1,6 @@
+# Texto original do jogo: não redistribuir (é extraído da instalação do usuário)
+translations/en.json
+translations/chunks/
+build/
+__pycache__/
+*.pyc
