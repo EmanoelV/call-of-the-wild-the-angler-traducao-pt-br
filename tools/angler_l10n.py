@@ -23,7 +23,7 @@ MOD = os.path.dirname(HERE)
 sys.path.insert(0, HERE)
 import apex, adf  # noqa: E402
 
-__version__ = '1.0.0'
+__version__ = '1.1.0'
 GAME_DIR_NAME = 'Call of the Wild The Angler'
 TESTED_BUILD = '16541670'           # build Steam testado (AppVersion 2886386)
 
@@ -285,6 +285,34 @@ def cmd_install(a):
     print('Após atualização do jogo ou "verificar integridade" na Steam, rode install de novo.')
 
 
+def cmd_manual(a):
+    """Gera o arquivo traduzido e mostra os valores para aplicar à mão (não altera o jogo)."""
+    tabp, idx = locate_entry(a.game)
+    if os.path.exists(tabp + BACKUP):
+        sys.exit('o mod já está instalado; rode uninstall antes de fazer a instalação manual')
+    src = cmd_build(a)
+    n = os.path.getsize(src)
+    arcp = tabp[:-4] + '.arc'
+    tab = apex.read_tab(tabp)
+    size = os.path.getsize(arcp)
+    pad = (-size) % tab['align']
+    off = size + pad
+    eo = tab['eoff'] + idx * 24
+    le = lambda v: ' '.join(f'{b:02X}' for b in struct.pack('<I', v))
+    print(f'''
+--- instalação manual ---
+arquivo traduzido: {src} ({n} bytes)
+1. faça backup de {tabp}
+2. anexe o arquivo traduzido ao fim de {os.path.basename(arcp)} (tamanho atual {size} bytes)''')
+    if pad:
+        print(f'   ATENÇÃO: antes, acrescente {pad} bytes 00 ao fim do .arc (alinhamento de 4096)')
+    print(f'''3. no editor hexadecimal, em {os.path.basename(tabp)}, posição 0x{eo + 8:X}, sobrescreva 16 bytes com:
+   {le(off)}  {le(n)}  {le(n)}  00 00 00 00
+   (offset 0x{off:X}, tamanho comprimido, tamanho real, bloco 0, tipo 0 = sem compressão, flags 0)
+   bytes originais nessa posição: {open(tabp, 'rb').read()[eo + 8:eo + 24].hex(' ').upper()}
+para desfazer: restaure o backup do .tab e reduza o .arc para {size} bytes (ou "Verificar integridade" na Steam)''')
+
+
 def cmd_uninstall(a):
     if game_running():
         sys.exit('feche o jogo antes de desinstalar')
@@ -307,14 +335,14 @@ def cmd_status(a):
 
 def main():
     p = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    p.add_argument('cmd', choices=['export', 'build', 'install', 'uninstall', 'status'])
+    p.add_argument('cmd', choices=['export', 'build', 'install', 'uninstall', 'status', 'manual'])
     p.add_argument('--game', help='pasta do jogo (padrão: detectada nas bibliotecas da Steam)')
     p.add_argument('--version', action='version', version=f'%(prog)s {__version__} (testado no build Steam {TESTED_BUILD})')
     a = p.parse_args()
     a.game = a.game or default_game()
     if not a.game or not os.path.isdir(os.path.join(a.game, 'archives_win64')):
         sys.exit('erro: pasta do jogo não encontrada; use --game "/caminho/para/Call of the Wild The Angler"')
-    if a.cmd in ('install', 'uninstall'):
+    if a.cmd in ('install', 'uninstall', 'manual'):
         build = installed_build(a.game)
         if build and build != TESTED_BUILD:
             print(f'aviso: build do jogo {build} diferente do testado ({TESTED_BUILD})')

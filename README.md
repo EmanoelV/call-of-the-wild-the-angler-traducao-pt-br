@@ -1,6 +1,6 @@
 # Call of the Wild: The Angler — Tradução PT-BR (Português do Brasil)
 
-![versão](https://img.shields.io/badge/vers%C3%A3o-1.0.0-blue)
+![versão](https://img.shields.io/badge/vers%C3%A3o-1.1.0-blue)
 ![jogo](https://img.shields.io/badge/build%20Steam-16541670-informational)
 ![plataforma](https://img.shields.io/badge/testado-Linux%20%2F%20Proton-success)
 ![status](https://img.shields.io/badge/projeto-f%C3%A3%20%C2%B7%20n%C3%A3o%20oficial-orange)
@@ -21,7 +21,7 @@ loja, equipamentos, iscas e nomes de peixes em PT-BR.
 
 | | |
 |---|---|
-| Versão do mod | **1.0.0** (veja o [CHANGELOG](CHANGELOG.md)) |
+| Versão do mod | **1.1.0** (veja o [CHANGELOG](CHANGELOG.md)) |
 | Jogo | Call of the Wild: The Angler — Steam (app 1408610) |
 | Build testado | Steam build **16541670** · AppVersion 2886386 |
 | Testado em | Linux (Steam + Proton) |
@@ -65,11 +65,60 @@ python3 tools/angler_l10n.py uninstall
 Isso restaura o `game0.tab` e o tamanho original do `game0.arc` byte a byte. Também dá
 para usar "Verificar integridade dos arquivos" na Steam.
 
+### Instalação manual (avançado)
+
+Para quem prefere ver e fazer cada alteração por conta própria. O resultado é idêntico
+ao do `install` (mesmo `game0.tab` byte a byte), mas o `uninstall` automático não
+funciona: para desfazer, siga o passo 6.
+
+Você vai precisar de um editor hexadecimal: [HxD](https://mh-nexus.de/en/hxd/) no
+Windows, ou [ImHex](https://imhex.werwolv.net/) / GHex no Linux. Os arquivos ficam em
+`<pasta do jogo>/archives_win64/initial/`.
+
+1. **Feche o jogo.** Se você já usou o instalador automático, rode `uninstall` antes.
+2. Gere o arquivo traduzido e os valores para a sua versão do jogo. Esse comando **só lê**
+   o jogo e não altera nada:
+
+   ```bash
+   python3 tools/angler_l10n.py manual
+   ```
+   Ele cria `build/text/master_eng.stringlookup` e mostra a posição e os bytes do passo 5.
+3. Faça uma cópia de segurança do `game0.tab` (por exemplo, `game0.tab.bak`) e anote o
+   tamanho atual do `game0.arc` em bytes.
+4. Anexe o arquivo traduzido ao **fim** do `game0.arc`, sem alterar o que já existe:
+
+   ```bash
+   # Linux / Steam Deck (no terminal, dentro de archives_win64/initial)
+   cat "/caminho/do/mod/build/text/master_eng.stringlookup" >> game0.arc
+   ```
+   ```bat
+   :: Windows (Prompt de Comando, dentro de archives_win64\initial)
+   copy /b game0.arc + "C:\caminho\do\mod\build\text\master_eng.stringlookup" game0.arc
+   ```
+   Se o comando `manual` avisar que faltam bytes de alinhamento, acrescente antes esses
+   bytes `00` ao fim do `.arc` no editor hexadecimal.
+5. Abra o `game0.tab` no editor hexadecimal, vá até a posição indicada e **sobrescreva**
+   (sem inserir) os 16 bytes pelos valores mostrados. Depois salve.
+   No build Steam **16541670**, com a tradução 1.1.0, os valores são:
+
+   | | |
+   |---|---|
+   | Posição | `0x12E58` |
+   | Bytes originais | `00 C0 97 02 1D B6 08 00 4D C9 17 00 5B 00 01 00` |
+   | Bytes novos | `00 00 7A 3E DD C9 18 00 DD C9 18 00 00 00 00 00` |
+
+   Esses bytes são o novo offset do texto no `.arc`, o tamanho do arquivo (repetido duas
+   vezes, porque ele não é comprimido), o bloco 0, o tipo 0 (sem compressão) e as flags 0.
+6. **Para desfazer:** restaure o `game0.tab.bak` e reduza o `game0.arc` ao tamanho
+   anotado no passo 3. No Linux, use `truncate -s TAMANHO game0.arc`. Também dá para
+   usar "Verificar integridade dos arquivos" na Steam.
+
 ### Outros comandos
 
 ```bash
 python3 tools/angler_l10n.py status     # progresso da tradução
 python3 tools/angler_l10n.py build      # só gera o arquivo traduzido em build/
+python3 tools/angler_l10n.py manual     # gera o arquivo e mostra os valores da instalação manual
 python3 tools/angler_l10n.py --version
 ```
 
@@ -129,7 +178,7 @@ usados na investigação).
 
 **Unofficial Brazilian Portuguese (pt-BR) fan translation for _Call of the Wild: The Angler_.**
 
-- **Version 1.0.0**, tested on Steam build **16541670** (AppVersion 2886386), Linux + Proton.
+- **Version 1.1.0**, tested on Steam build **16541670** (AppVersion 2886386), Linux + Proton.
   Windows and Steam Deck should work but haven't been tested yet.
 - Translates menus, options, tutorials, dialogue subtitles, codex, journal, missions,
   challenges, shop, gear and fish names (~98.7% of the game's text). AI-assisted
@@ -137,6 +186,10 @@ usados na investigação).
 - **Install:** close the game, then run `python3 tools/angler_l10n.py install` (Windows:
   `py tools\angler_l10n.py install`). Keep the in-game text language set to *English*; it
   will show up as "Português (BR)".
+- **Manual install:** `python3 tools/angler_l10n.py manual` only builds the translated
+  file and prints the tab offset and bytes to patch by hand (append the file to `game0.arc`,
+  then overwrite 16 bytes in `game0.tab` with a hex editor). See the Portuguese section
+  above for step-by-step instructions.
 - **Uninstall:** `python3 tools/angler_l10n.py uninstall`, or use *Verify integrity of game
   files* in Steam. After a game update, run `install` again.
 - **How it works:** the retail build ignores the `dropzone` override folder, so the

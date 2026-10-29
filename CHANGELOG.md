@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.1.0] — 2026-10-29
+
+- Novo comando `manual`. Ele gera o arquivo traduzido e mostra a posição e os bytes para
+  aplicar a tradução à mão, sem alterar o jogo.
+- Tutorial de instalação manual no README (anexar ao `game0.arc` e editar o `game0.tab`
+  num editor hexadecimal). O texto traduzido é o mesmo da 1.0.0.
+
 ## [1.0.0] — 2026-10-29
 
 Primeira versão pública.
